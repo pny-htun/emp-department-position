@@ -2,7 +2,9 @@
 namespace App\Repositories\Employee;
 
 use App\Models\Employee;
+use App\Models\EmpDepPos;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use App\Interfaces\Employee\EmployeeRepositoryInterface;
 
 class EmployeeRepository implements EmployeeRepositoryInterface
@@ -63,43 +65,42 @@ class EmployeeRepository implements EmployeeRepositoryInterface
 
     /**
      * Get an employee detail data by employee id
-     * @author  Zar Ni Win
+     * 
+     * @author  PhyoNaing Htun
      * @create  2022/06/08
      * @param   integer $id
      * @return  array
      */
     public function getEmployeeDetail($id)
     {
-        $empData = Employee::where('id',$id)
-                            ->with([
-                                'employeeDepPos' => function($query) use($id){ //get employee, department, position data by joint data 
-                                    $query  ->where('employee_id',$id)
-                                            ->whereNull('emp_dep_pos.deleted_at')
-                                            ->select('department_id','position_id')->get();
-                                },
-                                'employeeDepPos.department' =>function($query){ //get department data
-                                    $query  ->whereNull('departments.deleted_at')
-                                            ->select('departments.id','departments.name')->get();
-                                },
-                                'employeeDepPos.position' =>function($query){ //get position data
-                                    $query  ->whereNull('positions.deleted_at')
-                                            ->select('positions.id','positions.name')->get();
-                                }
-                            ]) 
-                            ->select('*')                                    
-                            ->selectRaw('employees.id + ? as emp_id', [1000])                            
-                            ->get();
-        return $empData;                            
+        $empData = Employee::where('employee_id', $id)->select('employee_id', 'name', 'email', 'gender')->first();
+
+        $deptPosData = EmpDepPos::leftJoin('dep_pos', 'emp_dep_pos.dep_pos_id', 'dep_pos.id')
+            ->leftJoin('departments', 'dep_pos.department_id', 'departments.id')
+            ->leftJoin('positions', 'dep_pos.position_id', 'positions.id')
+            ->where('emp_dep_pos.employee_id', $id)
+            ->select(
+                'dep_pos.id as dep_pos_id',
+                'departments.id as department_id',
+                'departments.name as department_name',
+                'positions.id as position_id',
+                'positions.name as position_name'
+            )->get();
+
+        $empData->dept_pos_data = $deptPosData;
+        return $empData;
     }
+
     /**
-     * Update an employee data
-     * @author  Zar Ni Win
+     * Check employee id is exists or not in `employees` table
+     * 
+     * @author  PhyoNaing Htun
      * @create  2022/06/08
      * @param   integer $id
-     * @return  array
+     * @return  boolean
      */
     public function checkExistEmployee($id)
     {
-        return Employee::where('id',$id)->exists();
+        return Employee::where('employee_id', $id)->exists();
     }
 }

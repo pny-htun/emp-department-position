@@ -5,17 +5,31 @@ namespace App\Http\Controllers\Employee;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
-use App\DBTransactions\Employee\SaveEmployee;
 use App\Logics\Employee\EmployeeLogic;
+use App\DBTransactions\Employee\SaveEmployee;
 use App\DBTransactions\Employee\DeleteEmployee;
 use App\DBTransactions\Employee\UpdateEmployee;
 use App\Http\Requests\Employee\EmployeeInfoSaveRequest;
 use App\Interfaces\Employee\EmployeeRepositoryInterface;
 use App\Http\Requests\Employee\EmployeeRegisterValidation;
 
+/**
+ * To manage employee data
+ * 
+ * @author  PhyoNaing Htun
+ * @create  2022/06/08
+ */
 class EmployeeController extends Controller
 {
     protected $employeeRepo, $empLogic;
+
+    /**
+     * Constructor to assign interface to variable
+     *
+     * @author  PhyoNaing Htun
+     * @create  2022/06/08
+     * @param   interface, class
+     */
     public function __construct(EmployeeRepositoryInterface $employeeRepo, EmployeeLogic $empLogic)
     {
         $this->employeeRepo = $employeeRepo;
@@ -47,79 +61,85 @@ class EmployeeController extends Controller
     /**
      * Display the specified resource.
      *
+     * @author PhyoNaing Htun
+     * @create 2022/06/08
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
     public function detailEmployee($id)
     {
-        $empId = $id - 1000; //subtract 1000 to get real employee id
-        $checkExist = $this->employeeRepo->checkExistEmployee($empId);
+        # check user selected id is exists or not in `employees` table
+        $checkExist = $this->employeeRepo->checkExistEmployee($id);
 
-        if($checkExist){
-            $data = $this->employeeRepo->getEmployeeDetail($empId);
+        if ($checkExist) {
+            $data = $this->employeeRepo->getEmployeeDetail($id);
             return response()->json(['status' => 'OK', 'data' => $data], 200);
-        }else{
-            return response()->json(['status' => 'NG', 'message' => 'Employee ID '.$id.' Data Not Found!'], 200);
+        } else {
+            return response()->json(['status' => 'NG', 'message' => trans('messages.SE0006')], 200);
         }
     }
 
     /**
-     * Update the specified resource in storage.
+     * Update the specified resource in system.
      *
+     * @author PhyoNaing Htun
+     * @create 2022/06/08
      * @param  \Illuminate\Http\Request  $request
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
     public function updateEmployee(EmployeeInfoSaveRequest $request, $id)
     {
-        $empId = $id - 1000; //subtract 1000 to get real employee id
-        $checkEmpExist      = $this->employeeRepo->checkExistEmployee($empId);
-        $checkDepPosExist   = $this->employeeRepo->checkExistDepPos($empId);
-        if($checkEmpExist && $checkDepPosExist){     
-            $updateData = $this->empLogic->prepareEmpPosData($empId,$request);
-            $process    = new UpdateEmployee($updateData);
-            $result     = $process->executeProcess();
+        # check user selected id is exists or not in `employees` table
+        $checkEmpExist = $this->employeeRepo->checkExistEmployee($id);
+
+        if ($checkEmpExist) {
+            $process = new UpdateEmployee($request, $id);
+            $result = $process->executeProcess();
             # check update process is success or not
             if ($result) {
-                return response()->json(['status' => 'OK', 'message' => 'Successfully Updated!'], 200);
+                return response()->json(['status' => 'OK', 'message' => trans('messages.SS0002')], 200);
             } else {
-                return response()->json(['status' => 'NG', 'message' => 'Fail to update!'], 200);
+                return response()->json(['status' => 'NG', 'message' => trans('messages.SE0003')], 200);
             }
-        }else{
-            return response()->json(['status' => 'NG', 'message' => 'Employee ID '.$id.' Data Not Found!'], 200);
+        } else {
+            return response()->json(['status' => 'NG', 'message' => trans('messages.SE0006')], 200);
         }
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Remove the specified resource from system.
      *
+     * @author PhyoNaing Htun
+     * @create 2022/06/08
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
     public function deleteEmployee($id)
     {
-        $empId = $id - 1000; //subtract 1000 to get real employee id
-        $checkExist = $this->employeeRepo->checkExistEmployee($empId);
-        if($checkExist){        
-            $process    = new DeleteEmployee($empId);
-            $result     = $process->executeProcess();
+        $checkExist = $this->employeeRepo->checkExistEmployee($id);
+
+        if ($checkExist) {        
+            $process = new DeleteEmployee($id);
+            $result = $process->executeProcess();
             # check save process is success or not
             if ($result) {
-                return response()->json(['status' => 'OK', 'message' => 'Successfully Deleted!'], 200);
+                return response()->json(['status' => 'OK', 'message' => trans('messages.SS0003')], 200);
             } else {
-                return response()->json(['status' => 'NG', 'message' => 'Fail to delete!'], 200);
+                return response()->json(['status' => 'NG', 'message' => trans('messages.SE0004')], 200);
             }
-        }else{
-            return response()->json(['status' => 'NG', 'message' => 'Employee ID '.$id.' Data Not Found!'], 200);
+        } else {
+            return response()->json(['status' => 'NG', 'message' => trans('messages.SE0006')], 200);
         }
     }
 
     /**
      * Search employee data
-     * @author  Zar Ni Win
-     * @create  2022/06/08
+     * 
+     * @author  PhyoNaing Htun
+     * @create  2022/06/09
      * @param   Request object
-     * @return \Illuminate\Http\Response
+     * @return  \Illuminate\Http\Response
      */
     public function searchEmployee(Request $request)
     {

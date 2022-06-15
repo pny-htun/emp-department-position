@@ -26,11 +26,12 @@ class EmployeeInfoSaveRequest extends FormRequest
     public function rules()
     {
         return [
-            "employee_name" => "required",
-            "email" => "required|email",
-            "gender" => "required|numeric|regex:/^[1-2]+$/"
+            "name" => "required|string|max:100",
+            "email" => "required|email|unique:employees,email,{$this->id},id,deleted_at,NULL|max:200",
+            "gender" => "required|numeric|between:1,2"
         ];
     }
+
     /**
      * Get the error messages for the defined validation rules.
      *
@@ -39,9 +40,7 @@ class EmployeeInfoSaveRequest extends FormRequest
     public function messages()
     {
         return [
-            'employee_name.required' => 'Employee Name is required',
-            'email.email' => 'Invalid email',
-            'gender.regex' => 'Gender must be 1 or 2',
+            'name.required' => 'The Employee Name field is required.',
         ];
     }
 

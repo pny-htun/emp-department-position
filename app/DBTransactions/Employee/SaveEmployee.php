@@ -6,6 +6,7 @@ use App\Models\Employee;
 use App\Models\EmpDepPos;
 use App\Classes\DBTransaction;
 use App\Models\EmployeePassword;
+use Illuminate\Support\Facades\Hash;
 
 /**
  * To save new employee in `employees`, `employee_passwords` and `emp_dep_pos` table
@@ -34,7 +35,9 @@ class SaveEmployee extends DBTransaction
 	 */
     public function process()
     {
+        $maxEmpId = Employee::max('employee_id') + 1; # get maximum id
         $employees = new Employee();
+        $employees->employee_id = $maxEmpId;
         $employees->name = $this->request->name;
         $employees->email = $this->request->email;
         $employees->gender = $this->request->gender;
@@ -43,9 +46,9 @@ class SaveEmployee extends DBTransaction
         $employees->save(); # insert employee
 
         $empPassword = new EmployeePassword();
-        $empPassword->employee_id = $employees->id;
-        $empPassword->password = $this->request->password;
-        $empPassword->confirm_password = $this->request->confirm_password;
+        $empPassword->employee_id = $maxEmpId;
+        $empPassword->password = Hash::make($this->request->password);
+        $empPassword->confirm_password = Hash::make($this->request->confirm_password);
         $empPassword->created_emp = 10001;
         $empPassword->updated_emp = 10001;
         $empPassword->save(); # insert employee password
@@ -57,9 +60,9 @@ class SaveEmployee extends DBTransaction
 
             $empDeptPos = [];
             # prepare array to save
-            $result = $collections->map(function ($value) use ($empDeptPos, $employees) {
+            $result = $collections->map(function ($value) use ($empDeptPos, $maxEmpId) {
                 $empDeptPos = [
-                    "employee_id" => $employees->id,
+                    "employee_id" => $maxEmpId,
                     "dep_pos_id"  => $value,
                     "created_emp" => 10001,
                     "updated_emp" => 10001

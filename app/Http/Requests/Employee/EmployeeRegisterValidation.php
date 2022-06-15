@@ -35,10 +35,10 @@ class EmployeeRegisterValidation extends FormRequest
     {
         return [
             "name" => "required|string|max:100",
-            "email" => "required|email|unique:employees,email|max:200",
-            "gender" => "required|integer|max:2",
-            "password" => "required|max:100",
-            "confirm_password" => "required|same:password|max:100"
+            "email" => "required|email|unique:employees,email,NULL,id,deleted_at,NULL|max:200",
+            "gender" => "required|numeric|between:1,2",
+            "password" => "required|min:6|max:100",
+            "confirm_password" => "required|same:password|min:6|max:100"
         ];
     }
 
